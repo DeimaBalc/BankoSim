@@ -106,7 +106,7 @@ def valdykKlienta(klientoSoketas):
                         serverioPranesimas = "PABAIGA: Prisijungimas sėkmingas!\n\n"
                         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
                     else:
-                        serverioPranesimas ="PABAIGA: Neteisingas slaptažodis.\n\n"
+                        serverioPranesimas ="PABAIGA: Neteisingas slapslaptažodis.\n\n"
                         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
             except FileNotFoundError:
                 serverioPranesimas ="PABAIGA: Naudotojas nerastas.\n\n"
