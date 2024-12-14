@@ -103,7 +103,7 @@ def valdykKlienta(klientoSoketas):
                     saved_password = data[2]
                     if saved_password == slapt:
                         seansoPrad = Kliento_seansas(datetime.now(), 0)
-                        serverioPranesimas = "PABAIGA: Prisijungimas nesėkmingas!\n\n"
+                        serverioPranesimas = "PABAIGA: Prisijungimas sėkmingas!\n\n"
                         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
                     else:
                         serverioPranesimas ="PABAIGA: Neteisingas slaptažodis.\n\n"
