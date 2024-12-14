@@ -45,7 +45,6 @@ def dataLaikas(dt):
 
 def valdykKlienta(klientoSoketas):
     try:
-        Kliento_seansas.pradLaikas = datetime.now()
 
         serverioPranesimas = "\n\n*** VU BANKAS ***\n\nPRISIJUNGTI (1)\nREGISTRUOTIS (2)\n"
         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
@@ -122,6 +121,8 @@ def valdykKlienta(klientoSoketas):
                 seansoPrad = registruoti()
         
         data = f.read().splitlines
+
+        
 
         def atsijungimas(seansoPrad):
 
