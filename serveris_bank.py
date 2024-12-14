@@ -119,6 +119,8 @@ def valdykKlienta(klientoSoketas):
                 seansoPrad = prisijungti()
             case 2:
                 seansoPrad = registruoti()
+
+        def idetipinigus():
         
         data = f.read().splitlines
 
