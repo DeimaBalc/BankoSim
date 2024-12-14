@@ -52,12 +52,14 @@ int main() {
         if (strcmp(buferis, "exit") == 0)
             break;
 
+       
         send(soketas, buferis, strlen(buferis), 0);
         memset(buferis, 0, BUFERIO_DYDIS);
+       
 
         if (recv(soketas, buferis, BUFERIO_DYDIS, 0) > 0)
             printf("%s", buferis);
-        if (strncmp("PABAIGA", buferis, 7) == 0) 
+        if (strncmp("ATSIJUNGTA", buferis, 10) == 0) 
             break;   
     }
 

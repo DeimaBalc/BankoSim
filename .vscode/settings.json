@@ -59,5 +59,6 @@
   "files.associations": {
     ".fantomasignore": "ignore",
     "unistd.h": "c"
-  }
+  },
+  "FSharp.suggestGitignore": false
 }
