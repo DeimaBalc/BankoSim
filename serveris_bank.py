@@ -133,7 +133,7 @@ def valdykKlienta(klientoSoketas):
                 seansas = Kliento_seansas(seansoPrad, datetime.now())
                 kliento_dir = f"./vartotojai/{kliento_id}/"
                 try:
-                    with open(f"{kliento_dir}asm_duom.dat", "w") as f:
+                    with open(f"{kliento_dir}asm_duom.dat", "a") as f:
                         f.write(str(seansas))
                 finally:
                     serverioPranesimas = "ATSIJUNGTA!\n\n"
