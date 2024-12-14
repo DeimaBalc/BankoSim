@@ -121,6 +121,7 @@ def valdykKlienta(klientoSoketas):
                 seansoPrad = registruoti()
 
         def idetipinigus():
+        def isimti():
         
         data = f.read().splitlines
 
