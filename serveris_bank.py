@@ -35,11 +35,10 @@ class Kliento_seansas:
             f"Seanso pabaiga{self.pabLaikas}\n\n"
         )
 
-def dataLaikas(dt):
-    rez = f'{dt.year}-{dt.month}-{dt.day}, {dt.hour}:{dt.minute}:{dt.second}'
-    return rez
 
-#def atsijungimas():
+
+
+
 def registruoti(klientoSoketas):
 
             kliento_id = random.randint(1000, 9999)
@@ -103,7 +102,17 @@ def prisijungti(klientoSoketas):
             
             return seansoPrad, kliento_id, kliento_sask
 
+def pervedimas(klientoSoketas, kliento_id):
 
+    serverioPranesimas = f"\n*** Pervedimas ***\n\nGavejo id"
+    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+    if not atsakymas: # jeigu nesigavo skaityti soketo  
+        raise Exception("nepavyko gauti atsakymo")
+    gavejas = int(atsakymas.strip())
+
+    siuntejoDir = f"./vartotojai/{kliento_id}/"
+    gavejoDir = f"./vartotojai/{gavejas}/"
 
 def valdykKlienta(klientoSoketas):
     try:
@@ -140,6 +149,8 @@ def valdykKlienta(klientoSoketas):
                     klientoSoketas.send(serverioPranesimas.encode('utf-8')) 
 
         match veiksmas:
+            case 4:
+                pervedimas(klientoSoketas, kliento_id)
             case 5:
                 atsijungimas(seansoPrad)
 
