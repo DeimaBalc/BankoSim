@@ -31,76 +31,118 @@ class Kliento_seansas:
     def __str__(self):
         return (
             
-            f"\nSeanso pradzia{self.pradLaikas}\n"
-            f"Seanso pabaiga{self.pabLaikas}\n\n"
+            f"Seanso pradzia{self.pradLaikas}\n"
+            f"Seanso pabaiga{self.pabLaikas}\n"
         )
 
 
+def likutis(kliento_dir, klientoSoketas):
+    try:
+        with open(f"{kliento_dir}asm_duom.dat", "r") as f:
+            data = f.read().splitlines()
+            likutis = data[3]
+            serverioPranesimas = f"Jūsų sąskaitos likutis: {likutis} EUR\n\n"
+            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    except FileNotFoundError:
+        serverioPranesimas ="ATSIJUNGTA: Naudotojas nerastas.\n\n"
+        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    
 
+def ideti_pinigus(kliento_dir, klientoSoketas):
+    try:
+        with open(f"{kliento_dir}asm_duom.dat", "r") as f:
+            data = f.read().splitlines()
+            likutis = data[3]
+            serverioPranesimas = "Įveskite sumą, kurią norite įdėti:\n"
+            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+            if not atsakymas: # jeigu nesigavo skaityti soketo  
+                raise Exception("nepavyko gauti atsakymo")
+            suma = int(atsakymas.strip())
+
+            likutis += suma
+
+            serverioPranesimas = f"Sėkmingai pridėta {suma} EUR. Naujas likutis: {likutis} EUR\n\n"
+            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+
+    except FileNotFoundError:
+        serverioPranesimas ="ATSIJUNGTA: Failas nerastas.\n\n"
+        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+
+def isimti_pinigus(saskaita, klientoSoketas):
+    serverioPranesimas = "Įveskite sumą, kurią norite išimti:\n"
+    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    suma = float(klientoSoketas.recv(4096).decode('utf-8').strip())
+    if suma > saskaita['likutis']:
+        serverioPranesimas = "Nepakanka lėšų sąskaitoje!\n\n"
+    else:
+        saskaita['likutis'] -= suma
+        serverioPranesimas = f"Sėkmingai išimta {suma} EUR. Naujas likutis: {saskaita['likutis']} EUR\n\n"
+    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
 
 
 def registruoti(klientoSoketas):
 
-            kliento_id = random.randint(1000, 9999)
-            kliento_sask = random.randint(10000, 99999)
+    kliento_id = random.randint(1000, 9999)
+    kliento_sask = random.randint(10000, 99999)
 
-            serverioPranesimas = f"\n*** Naujas klientas ***\n\nVartotojo ID: {kliento_id}\nVartotojo Saskaita: {kliento_sask}\nSukurkite slaptazodi "
+    serverioPranesimas = f"\n*** Naujas klientas ***\n\nVartotojo ID: {kliento_id}\nVartotojo Saskaita: {kliento_sask}\nSukurkite slaptazodi "
+    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+    if not atsakymas: # jeigu nesigavo skaityti soketo  
+        raise Exception("nepavyko gauti atsakymo")
+    slapt = atsakymas.strip()
+
+    kliento_dir = f"./vartotojai/{kliento_id}/"
+    os.makedirs(kliento_dir, exist_ok=True)  # Create directory if it doesn't exist
+    klientas = Klientas(kliento_id, kliento_sask, slapt)
+    try:
+        with open(f"{kliento_dir}asm_duom.dat", "w") as f:
+            f.write(str(klientas))
+            serverioPranesimas = "Klientas sėkmingai užregistruotas!\n\n"
             klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
-            if not atsakymas: # jeigu nesigavo skaityti soketo  
-                raise Exception("nepavyko gauti atsakymo")
-            slapt = atsakymas.strip()
+    except Exception as e:
+        erverioPranesimas = f"ATSIJUNGTA: Nepavyko užregistruoti kliento: {e}\n\n"
+        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
 
-            kliento_dir = f"./vartotojai/{kliento_id}/"
-            os.makedirs(kliento_dir, exist_ok=True)  # Create directory if it doesn't exist
-            klientas = Klientas(kliento_id, kliento_sask, slapt)
-            try:
-                with open(f"{kliento_dir}asm_duom.dat", "w") as f:
-                    f.write(str(klientas))
-                    serverioPranesimas = "Klientas sėkmingai užregistruotas!\n"
-                    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-            except Exception as e:
-                serverioPranesimas = f"ATSIJUNGTA: Nepavyko užregistruoti kliento: {e}\n\n"
-                klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+        seansoPrad = datetime.now()
 
-            seansoPrad = datetime.now()
-
-            return seansoPrad, kliento_id, kliento_sask
+    return seansoPrad, kliento_id, kliento_sask
 
 def prisijungti(klientoSoketas):
 
-            serverioPranesimas ="\n*** Prisijungimas ***\n\nIveskite vartotojo ID"
-            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
-            if not atsakymas: # jeigu nesigavo skaityti soketo  
-                raise Exception("nepavyko gauti atsakymo")
-            kliento_id = int(atsakymas.strip())
+    serverioPranesimas ="\n*** Prisijungimas ***\n\nIveskite vartotojo ID"
+    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+    if not atsakymas: # jeigu nesigavo skaityti soketo  
+        raise Exception("nepavyko gauti atsakymo")
+    kliento_id = int(atsakymas.strip())
             
-            serverioPranesimas = "\nIveskite slaptazodi: "
-            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
-            if not atsakymas: # jeigu nesigavo skaityti soketo  
-                raise Exception("nepavyko gauti atsakymo")
-            slapt = atsakymas.strip()
+    serverioPranesimas = "\nIveskite slaptazodi: "
+    klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+    if not atsakymas: # jeigu nesigavo skaityti soketo  
+        raise Exception("nepavyko gauti atsakymo")
+    slapt = atsakymas.strip()
             
-            kliento_dir = f"./vartotojai/{kliento_id}/"
-            try:
-                with open(f"{kliento_dir}asm_duom.dat", "r") as f:
-                    data = f.read().splitlines()
-                    varSlapt = data[2]
-                    if varSlapt == slapt:
-                        seansoPrad = Kliento_seansas(datetime.now(), 0)
-                        kliento_sask = data[1]
-                        serverioPranesimas = "Prisijungimas sėkmingas!\n\n"
-                        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-                    else:
-                        serverioPranesimas ="ATSIJUNGTA: Neteisingas slaptažodis.\n\n"
-                        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-            except FileNotFoundError:
-                serverioPranesimas ="ATSIJUNGTA: Naudotojas nerastas.\n\n"
+    kliento_dir = f"./vartotojai/{kliento_id}/"
+    try:
+        with open(f"{kliento_dir}asm_duom.dat", "r") as f:
+            data = f.read().splitlines()
+            varSlapt = data[2]
+            if varSlapt == slapt:
+                seansoPrad = Kliento_seansas(datetime.now(), 0)
+                kliento_sask = data[1]
+                serverioPranesimas = "Prisijungimas sėkmingas!\n\n"
                 klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+            else:
+                serverioPranesimas ="ATSIJUNGTA: Neteisingas slaptažodis.\n\n"
+                klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+    except FileNotFoundError:
+        serverioPranesimas ="ATSIJUNGTA: Naudotojas nerastas.\n\n"
+        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
             
-            return seansoPrad, kliento_id, kliento_sask
+    return seansoPrad, kliento_id, kliento_sask
 
 def pervedimas(klientoSoketas, kliento_id):
 
@@ -115,46 +157,54 @@ def pervedimas(klientoSoketas, kliento_id):
     gavejoDir = f"./vartotojai/{gavejas}/"
 
 def valdykKlienta(klientoSoketas):
+    atsijungti = 1
+
     try:
+        while(atsijungti):
 
-        serverioPranesimas = "\n\n*** VU BANKAS ***\n\nPRISIJUNGTI (1)\nREGISTRUOTIS (2)\n"
-        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-        atsakymas = klientoSoketas.recv(4096).decode('utf-8')
-        if not atsakymas: # jeigu nesigavo skaityti soketo  
-            raise Exception("nepavyko gauti atsakymo")
-        login = int(atsakymas.strip())
-            
-        match login:
-            case 1:
-                seansoPrad, kliento_id, kliento_sask = prisijungti(klientoSoketas)
-            case 2:
-                seansoPrad, kliento_id, kliento_sask = registruoti(klientoSoketas)
+            serverioPranesimas = "\n\n*** VU BANKAS ***\n\nPRISIJUNGTI (1)\nREGISTRUOTIS (2)\n"
+            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+            if not atsakymas: # jeigu nesigavo skaityti soketo  
+                raise Exception("nepavyko gauti atsakymo")
+            login = int(atsakymas.strip())
+                
+            match login:
+                case 1:
+                    seansoPrad, kliento_id, kliento_sask = prisijungti(klientoSoketas)
+                case 2:
+                    seansoPrad, kliento_id, kliento_sask = registruoti(klientoSoketas)
 
-        serverioPranesimas = "\n\n*** VU BANKAS ***\n\nLIKUTIS (1)\nIDETI PINIGUS (2)\nISIMTI PINIGUS (3)\nPERVESTI PINIGUS (4)\nATSIJUNGTI(5)\n\n"
-        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-        atsakymas = klientoSoketas.recv(4096).decode('utf-8')
-        if not atsakymas: # jeigu nesigavo skaityti soketo  
-            raise Exception("nepavyko gauti atsakymo")
-        veiksmas = int(atsakymas.strip())
+            serverioPranesimas = "\n\n*** VU BANKAS ***\n\nLIKUTIS (1)\nIDETI PINIGUS (2)\nISIMTI PINIGUS (3)\nPERVESTI PINIGUS (4)\nATSIJUNGTI(5)\n\n"
+            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
+            if not atsakymas: # jeigu nesigavo skaityti soketo  
+                raise Exception("nepavyko gauti atsakymo")
+            veiksmas = int(atsakymas.strip())
 
-        def atsijungimas(seansoPrad):
+            kliento_dir = f"./vartotojai/{kliento_id}/"
 
-                seansas = Kliento_seansas(seansoPrad, datetime.now())
-                kliento_dir = f"./vartotojai/{kliento_id}/"
-                try:
-                    with open(f"{kliento_dir}asm_duom.dat", "w") as f:
-                        f.write(str(seansas))
-                finally:
-                    serverioPranesimas = "ATSIJUNGTA!\n\n"
-                    klientoSoketas.send(serverioPranesimas.encode('utf-8')) 
+            match veiksmas:
+                case 1:
+                    likutis(kliento_dir, klientoSoketas)
+                case 2:
+                    ideti_pinigus(kliento_dir, klientoSoketas)
+                case 3:
+                    isimti_pinigus(kliento_sask, klientoSoketas)
+                case 4:
+                    pervedimas(klientoSoketas, kliento_id)
+                case 5:
+                    atsijungti = 0
 
-        match veiksmas:
-            case 4:
-                pervedimas(klientoSoketas, kliento_id)
-            case 5:
-                atsijungimas(seansoPrad)
+        seansas = Kliento_seansas(seansoPrad, datetime.now())
+        kliento_dir = f"./vartotojai/{kliento_id}/"
 
-           
+        try:
+            with open(f"{kliento_dir}asm_duom.dat", "a") as f:
+                f.write(str(seansas))
+        finally:
+            serverioPranesimas = "ATSIJUNGTA!\n\n"
+            klientoSoketas.send(serverioPranesimas.encode('utf-8'))        
        
     except Exception as e:
         print(f"Klaida apdorojant kliento soketą: {e}")
