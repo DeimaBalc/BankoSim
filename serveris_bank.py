@@ -43,7 +43,7 @@ def likutis(kliento_dir, klientoSoketas):
         with open(f"{kliento_dir}asm_duom.dat") as f:
             data = f.read().splitlines()
             likutis = float(data[3])
-            serverioPranesimas = f"Jūsų sąskaitos likutis: {likutis:.2f} EUR\n\n"
+            serverioPranesimas = f"Jūsų sąskaitos likutis: {likutis:.2f} EUR\n"
             klientoSoketas.send(serverioPranesimas.encode('utf-8'))
     except FileNotFoundError:
         serverioPranesimas = "Naudotojas nerastas.\n\n"
@@ -81,11 +81,11 @@ def ideti_pinigus(kliento_dir, klientoSoketas):
             f.write("\n".join(data) + "\n")  # Ensure to add a newline at the end
 
         # Send success message to the client
-        serverioPranesimas = f"Sėkmingai pridėta {suma:.2f} EUR. Naujas likutis: {likutis:.2f} EUR\n\n"
+        serverioPranesimas = f"Sėkmingai pridėta {suma:.2f} EUR. Naujas likutis: {likutis:.2f} EUR\n"
         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
 
     except FileNotFoundError:
-        serverioPranesimas = "Naudotojas nerastas.\n\n"
+        serverioPranesimas = "Naudotojas nerastas.\n"
         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
     except ValueError as e:
         serverioPranesimas = f"Klaida: {e}\n\n"
