@@ -24,14 +24,16 @@ class Klientas:
 
 
 class Kliento_seansas:
-    def __init__(self, pradLaikas, pabLaikas):
-        self.pradLaikas = pradLaikas
-        self.pabLaikas = pabLaikas
+    def __init__(self):
+        self.pradLaikas = None
+        self.pabLaikas = None
+        self.veiksmas = None
 
     def __str__(self):
         return (
             f"\nSeanso pradžia: {self.pradLaikas}\n"
-            f"Seanso pabaiga: {self.pabLaikas}\n\n"
+            f"Seanso pabaiga: {self.pabLaikas}\n"
+            f"Atlikta: {self.veiksmas}\n"
         )
 
 
@@ -53,25 +55,35 @@ def likutis(kliento_dir, klientoSoketas):
 
 def ideti_pinigus(kliento_dir, klientoSoketas):
     try:
+        # Open the user's data file to read the current balance
         with open(f"{kliento_dir}asm_duom.dat") as f:
             data = f.read().splitlines()
-            serverioPranesimas = "Įveskite sumą, kurią norite įdėti:\n"
-            klientoSoketas.send(serverioPranesimas.encode('utf-8'))
-            atsakymas = klientoSoketas.recv(4096).decode('utf-8')
-            suma = float(atsakymas.strip())
-            if suma <= 0:
-                raise ValueError("Įvesta suma turi būti teigiama.")
-
-            likutis = float(data[3])
-
-            likutis += suma
-
-            with open(f"{kliento_dir}asm_duom.dat", 'w') as f:  # Open the file in write mode
-                data[3] = str(likutis)  # Update the balance in the data list
-                f.write("\n".join(data))
-
-        serverioPranesimas = f"Sėkmingai pridėta {suma:.2f} EUR. Naujas likutis: {data['likutis']:.2f} EUR\n\n"
+        
+        # Prompt the user for the amount to deposit
+        serverioPranesimas = "Įveskite sumą, kurią norite įdėti:\n"
         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+        
+        # Receive the response from the client
+        atsakymas = klientoSoketas.recv(4096).decode('utf-8') 
+        suma = float(atsakymas.strip())  # Convert the response to a float
+        
+        # Validate the input amount
+        if suma <= 0:
+            raise ValueError("Įvesta suma turi būti teigiama.")
+
+        # Update the balance
+        likutis = float(data[3])  # Assuming the balance is on the fourth line
+        likutis += suma
+
+        # Write the updated balance back to the file
+        with open(f"{kliento_dir}asm_duom.dat", 'w') as f:  # Open the file in write mode
+            data[3] = str(likutis)  # Update the balance in the data list
+            f.write("\n".join(data) + "\n")  # Ensure to add a newline at the end
+
+        # Send success message to the client
+        serverioPranesimas = f"Sėkmingai pridėta {suma:.2f} EUR. Naujas likutis: {likutis:.2f} EUR\n\n"
+        klientoSoketas.send(serverioPranesimas.encode('utf-8'))
+
     except FileNotFoundError:
         serverioPranesimas = "Naudotojas nerastas.\n\n"
         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
@@ -136,7 +148,7 @@ def registruoti(klientoSoketas):
     try:
         with open(f"{kliento_dir}asm_duom.dat", "w") as f:
             f.write(str(klientas))
-            serverioPranesimas = "Klientas sėkmingai užregistruotas!\n\n"
+            serverioPranesimas = "Klientas sėkmingai užregistruotas!\n"
             klientoSoketas.send(serverioPranesimas.encode('utf-8'))
     except Exception as e:
         serverioPranesimas = f"ATSIJUNGTA: Nepavyko užregistruoti kliento: {e}\n\n"
@@ -168,7 +180,7 @@ def prisijungti(klientoSoketas):
             data = f.read().splitlines()
             varSlapt = data[2]
             if varSlapt == slapt:
-                seansoPrad = Kliento_seansas(datetime.now(), 0)
+                seansoPrad = datetime.now()
                 kliento_sask = data[1]
                 serverioPranesimas = "Prisijungimas sėkmingas!\n\n"
                 klientoSoketas.send(serverioPranesimas.encode('utf-8'))
@@ -243,7 +255,7 @@ def pervedimas(kliento_dir, klientoSoketas):
 def valdykKlienta(klientoSoketas):
     
     atsijungti = 0
-
+    seansas = Kliento_seansas()
     try:
         while not atsijungti:
             
@@ -264,9 +276,10 @@ def valdykKlienta(klientoSoketas):
             pasirinkimas = int(atsakymas)
 
             if pasirinkimas == 1:
-                seansoPrad, kliento_id = prisijungti(klientoSoketas)
+                seansas.pradLaikas, kliento_id = prisijungti(klientoSoketas)
             elif pasirinkimas == 2:
-                seansoPrad, kliento_id = registruoti(klientoSoketas)
+                seansas.pradLaikas, kliento_id = registruoti(klientoSoketas)
+
 
             while not atsijungti:
             
@@ -277,7 +290,7 @@ def valdykKlienta(klientoSoketas):
                     "3. IŠIMTI PINIGUS\n"
                     "4. PERVESTI PINIGUS\n"
                     "5. ATSIJUNGTI\n\n"
-                    "Pasirinkite veiksmą (1-5): "
+                    "Pasirinkite veiksmą (1-5):\n"
                 )
                 klientoSoketas.send(serverioPranesimas.encode('utf-8'))
                 atsakymas = klientoSoketas.recv(4096).decode('utf-8').strip()
@@ -304,8 +317,8 @@ def valdykKlienta(klientoSoketas):
                         klientoSoketas.send(serverioPranesimas.encode('utf-8'))
                         atsijungti = 1
 
-        seansoPabaiga = datetime.now()
-        seansas = Kliento_seansas(seansoPrad, seansoPabaiga)
+        seansas.pabLaikas = datetime.now()
+    #Kliento_seansas(seansoPrad, seansoPabaiga)
 
         try:
             with open(f"{kliento_dir}asm_duom.dat", "a") as f:
