@@ -43,7 +43,7 @@ int main() {
 
     
     while (1) {
-        //printf(" ");
+        printf(": ");
         fgets(buferis, BUFERIO_DYDIS, stdin);
 
         // Nuvalome \n
